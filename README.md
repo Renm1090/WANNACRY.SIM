@@ -1,0 +1,1 @@
+# WANNACRY.SIM
