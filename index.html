@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WannaCry Spread Simulator - Cybernetic Terminal</title>
+    <meta name="description"
+        content="Simulador web interactivo 3D de la propagación del ransomware WannaCry basado en modelos matemáticos epidemiológicos (exponencial y logístico) y estética cyberpunk.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet">
+    <!-- FontAwesome para Iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js para visualización de gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Estilos CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="crt-overlay">
+
+    <!-- Encabezado Cyberpunk -->
+    <header class="cyber-header">
+        <div class="header-logo">
+            <i class="fa-solid fa-biohazard text-red blink"></i>
+            <span class="glitch-text" data-text="WANNACRY.SIM">WANNACRY.SIM</span>
+        </div>
+        <div class="system-status-indicator">
+            <span class="status-label">STATUS:</span>
+            <span id="global-status" class="status-value text-green">ONLINE</span>
+        </div>
+        <div class="header-clock" id="digital-clock">00:00:00:00</div>
+    </header>
+
+    <!-- Navegación de Pestañas -->
+    <nav class="cyber-nav">
+        <button class="nav-tab active" data-tab="simulator-tab" id="btn-tab-sim">
+            <i class="fa-solid fa-network-wired"></i> SIMULADOR DE RED
+        </button>
+        <button class="nav-tab" data-tab="math-tab" id="btn-tab-math">
+            <i class="fa-solid fa-calculator"></i> MODELO MATEMÁTICO
+        </button>
+        <button class="nav-tab" data-tab="history-tab" id="btn-tab-history">
+            <i class="fa-solid fa-terminal"></i> CASO HISTÓRICO 2017
+        </button>
+    </nav>
+
+    <!-- Contenedor Principal de Pestañas -->
+    <main class="main-container">
+
+        <!-- PESTAÑA 1: SIMULADOR DE RED -->
+        <section id="simulator-tab" class="tab-content active">
+            <div class="grid-layout">
+
+                <!-- Panel de Control Lateral -->
+                <aside class="control-panel cyber-panel">
+                    <h2 class="panel-title"><i class="fa-solid fa-sliders"></i> PARÁMETROS DEL MODELO</h2>
+
+                    <div class="control-group">
+                        <label for="param-nodes">Total de Nodos Vulnerables (L): <span id="val-nodes">200</span></label>
+                        <input type="range" id="param-nodes" min="50" max="500" step="10" value="200">
+                    </div>
+
+                    <div class="control-group">
+                        <label for="param-k">Tasa de Propagación (k): <span id="val-k">0.12</span></label>
+                        <input type="range" id="param-k" min="0.01" max="0.50" step="0.01" value="0.12">
+                    </div>
+
+                    <div class="control-group">
+                        <label for="param-p0">Infección Inicial (P0): <span id="val-p0">1</span></label>
+                        <input type="range" id="param-p0" min="1" max="10" step="1" value="1">
+                    </div>
+
+                    <div class="control-group">
+                        <label for="param-speed">Velocidad de Simulación: <span id="val-speed">1x</span></label>
+                        <input type="range" id="param-speed" min="0.25" max="3.00" step="0.25" value="1.00">
+                    </div>
+
+                    <div class="control-group switch-group">
+                        <label for="toggle-logistic">Modelo Logístico Activo
+                            <span class="tooltip">
+                                <i class="fa-regular fa-circle-question"></i>
+                                <span class="tooltip-text">Si está inactivo, el virus crecerá exponencialmente sin
+                                    límite (P0 * e^(kt)). Si está activo, saturará la red al alcanzar el límite
+                                    (L).</span>
+                            </span>
+                        </label>
+                        <label class="switch">
+                            <input type="checkbox" id="toggle-logistic" checked>
+                            <span class="slider-switch"></span>
+                        </label>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button id="btn-start" class="btn btn-green"><i class="fa-solid fa-play"></i> INICIAR</button>
+                        <button id="btn-reset" class="btn btn-gray"><i class="fa-solid fa-rotate-left"></i>
+                            REINICIAR</button>
+                    </div>
+
+                    <!-- Botón de Emergencia Killswitch -->
+                    <div class="killswitch-container">
+                        <button id="btn-killswitch" class="btn btn-red pulse-effect">
+                            <i class="fa-solid fa-skull"></i> ACTIVAR KILLSWITCH (REGISTRAR DOMINIO)
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- Área Central de Visualización y Estadísticas -->
+                <div class="center-stage">
+
+                    <!-- Tarjetas de Métricas -->
+                    <div class="metrics-grid">
+                        <div class="metric-card card-healthy">
+                            <span class="metric-label">NODOS SALUDABLES</span>
+                            <span id="metric-healthy" class="metric-value text-cyan">200</span>
+                        </div>
+                        <div class="metric-card card-infected">
+                            <span class="metric-label">INFECTADOS (P)</span>
+                            <span id="metric-infected" class="metric-value text-red">0</span>
+                        </div>
+                        <div class="metric-card card-encrypted">
+                            <span class="metric-label">ENCRIPTADOS</span>
+                            <span id="metric-encrypted" class="metric-value text-magenta">0</span>
+                        </div>
+                        <div class="metric-card card-patched">
+                            <span class="metric-label">INMUNIZADOS</span>
+                            <span id="metric-patched" class="metric-value text-green">0</span>
+                        </div>
+                    </div>
+
+                    <!-- Canvas del Grafo de Red -->
+                    <div class="canvas-container cyber-panel">
+                        <h2 class="panel-title-inline"><i class="fa-solid fa-circle-nodes"></i> NÚCLEO DE RED EN TIEMPO
+                            REAL</h2>
+                        <canvas id="network-canvas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Consola y Gráficos Inferiores -->
+                <div class="bottom-stage">
+                    <!-- Log de Eventos de Terminal -->
+                    <div class="terminal-log-panel cyber-panel">
+                        <h2 class="panel-title"><i class="fa-solid fa-terminal"></i> REGISTRO DE EVENTOS (CONSOLE_LOG)
+                        </h2>
+                        <div class="terminal-body" id="terminal-output">
+                            <div class="terminal-line text-green">&gt; WANNA_CRY SIMULATOR INITIALIZED... READY TO
+                                TRANSMIT.</div>
+                            <div class="terminal-line text-cyan">&gt; Ajusta los parámetros y presiona INICIAR para
+                                comenzar la infección.</div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico Lineal de Curvas -->
+                    <div class="chart-panel cyber-panel">
+                        <h2 class="panel-title"><i class="fa-solid fa-chart-line"></i> CURVAS DE PROPAGACIÓN
+                            COMPARATIVAS</h2>
+                        <div class="chart-container">
+                            <canvas id="propagation-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- PESTAÑA 2: MODELO MATEMÁTICO -->
+        <section id="math-tab" class="tab-content">
+            <div class="math-grid">
+
+                <!-- Explicación de Ecuaciones -->
+                <article class="math-explanation cyber-panel">
+                    <h2 class="panel-title"><i class="fa-solid fa-circle-info"></i> ANÁLISIS DE LAS ECUACIONES
+                        DIFERENCIALES</h2>
+
+                    <div class="math-block">
+                        <h3>1. Crecimiento Exponencial (Fase Inicial de Infiltración)</h3>
+                        <p>En las fases tempranas, cuando el número de dispositivos vulnerables es abundante y no hay
+                            mitigación activa, el ransomware se propaga libremente. La tasa de cambio en la infección es
+                            directamente proporcional a los infectados actuales:</p>
+                        <div class="equation-box">
+                            $$\frac{dP}{dt} = k \cdot P$$
+                        </div>
+                        <p>Resolviendo esta ecuación diferencial lineal de primer orden por separación de variables,
+                            obtenemos el modelo exponencial:</p>
+                        <div class="equation-box highlight-eq">
+                            $$P(t) = P_0 \cdot e^{k \cdot t}$$
+                        </div>
+                        <p>Aquí, el crecimiento no tiene límite superior. La tasa de infección $I(t)$ mide el número de
+                            nuevos contagios potenciales sobre los nodos saludables restantes: $I(t) = \text{Total} -
+                            P(t)$.</p>
+                    </div>
+
+                    <div class="math-block">
+                        <h3>2. Crecimiento Logístico (Saturación de la Red)</h3>
+                        <p>Dado que las redes reales son cerradas y tienen un número finito de máquinas vulnerables
+                            ($L$), la infección no puede crecer exponencialmente para siempre. Al haber menos máquinas
+                            saludables, la propagación se ralentiza. Esto se modela con la ecuación de Verhulst:</p>
+                        <div class="equation-box">
+                            $$\frac{dP}{dt} = k \cdot P \cdot \left(1 - \frac{P}{L}\right)$$
+                        </div>
+                        <p>Donde la solución analítica integrando por fracciones parciales da la ecuación logística:</p>
+                        <div class="equation-box highlight-eq">
+                            $$P(t) = \frac{L}{1 + \left(\frac{L - P_0}{P_0}\right) \cdot e^{-k \cdot t}}$$
+                        </div>
+                        <p>Este modelo incluye un factor autolimitante que representa la saturación de los canales de
+                            red o la desaceleración natural al agotarse los objetivos vulnerables.</p>
+                    </div>
+                </article>
+
+                <!-- Calculadora Analítica Interactiva -->
+                <aside class="math-solver-panel cyber-panel">
+                    <h2 class="panel-title"><i class="fa-solid fa-square-root-variable"></i> CALCULADORA DE ECUACIÓN
+                        DIFERENCIAL</h2>
+                    <form id="solver-form" onsubmit="return false;">
+                        <div class="control-group">
+                            <label for="solver-p0">Infección Inicial (P0):</label>
+                            <input type="number" id="solver-p0" min="1" max="100" value="1">
+                        </div>
+                        <div class="control-group">
+                            <label for="solver-k">Tasa de Transmisión (k):</label>
+                            <input type="number" id="solver-k" min="0.01" max="2.00" step="0.01" value="0.15">
+                        </div>
+                        <div class="control-group">
+                            <label for="solver-l">Población Total Vulnerable (L):</label>
+                            <input type="number" id="solver-l" min="10" max="10000" value="1000">
+                        </div>
+                        <div class="control-group">
+                            <label for="solver-t">Tiempo de Evaluación (t):</label>
+                            <input type="number" id="solver-t" min="1" max="200" value="50">
+                        </div>
+                        <button type="button" id="btn-calculate" class="btn btn-cyan"><i
+                                class="fa-solid fa-square-poll-vertical"></i> CALCULAR ANALÍTICAMENTE</button>
+                    </form>
+
+                    <!-- Resultados del Cálculo -->
+                    <div class="solver-results" id="solver-results-box">
+                        <h3>RESULTADOS EN T = <span id="res-t">50</span></h3>
+                        <div class="results-grid">
+                            <div class="res-item">
+                                <span class="res-label">Modelo Exponencial:</span>
+                                <span id="res-exponential" class="res-value text-red">0</span>
+                                <span class="res-sub">Nodos infectados (Sin límite)</span>
+                            </div>
+                            <div class="res-item">
+                                <span class="res-label">Modelo Logístico:</span>
+                                <span id="res-logistic" class="res-value text-cyan">0</span>
+                                <span class="res-sub">Nodos infectados (Acotado)</span>
+                            </div>
+                        </div>
+
+                        <!-- Mini Gráfica Teórica de la Calculadora -->
+                        <div class="mini-chart-container">
+                            <canvas id="solver-chart"></canvas>
+                        </div>
+                    </div>
+                </aside>
+
+            </div>
+        </section>
+
+        <!-- PESTAÑA 3: CASO HISTÓRICO -->
+        <section id="history-tab" class="tab-content">
+            <div class="history-content cyber-panel">
+                <h2 class="panel-title"><i class="fa-solid fa-clock-rotate-left"></i> CRONOLOGÍA DE LA CRISIS WANNACRY
+                    (MAY 2017)</h2>
+
+                <div class="history-grid">
+
+                    <div class="history-text">
+                        <h3>El Ransomware que Paralizó el Mundo</h3>
+                        <p>El 12 de mayo de 2017, un ciberataque masivo comenzó a infectar computadoras en todo el
+                            mundo. A diferencia del malware convencional, WannaCry se comportó como un **gusano
+                            informático autónomo**, lo que le permitió propagarse de forma automática sin interacción
+                            humana a través de redes locales e Internet.</p>
+
+                        <h4>Fases Clave del Ataque:</h4>
+                        <ul class="cyber-list">
+                            <li><strong class="text-cyan">Infiltración:</strong> El virus escaneaba el puerto tcp/445
+                                buscando sistemas vulnerables al protocolo SMBv1 de Windows. Utilizó la vulnerabilidad
+                                **EternalBlue** (CVE-2017-0144), un exploit desarrollado por la NSA y filtrado por el
+                                grupo *The Shadow Brokers*.</li>
+                            <li><strong class="text-red">Propagación:</strong> Tras vulnerar el sistema, instalaba la
+                                puerta trasera **DoublePulsar**, permitiéndole inyectar y ejecutar el payload del
+                                malware en memoria de forma sigilosa. De forma inmediata, el nodo infectado comenzaba a
+                                buscar nuevos vecinos para repetir el ciclo exponencialmente.</li>
+                            <li><strong class="text-magenta">Encriptación:</strong> Los archivos de las víctimas eran
+                                cifrados utilizando algoritmos AES y RSA robustos, exigiendo un rescate de entre $300 y
+                                $600 dólares pagados en Bitcoin bajo la amenaza de eliminar la información.</li>
+                        </ul>
+
+                        <div class="alert-box alert-cyan">
+                            <strong><i class="fa-solid fa-shield-halved"></i> El Héroe Detrás del "Killswitch":</strong>
+                            Marcus Hutchins (conocido como *MalwareTech*) descubrió que el código del malware intentaba
+                            conectarse a un dominio web no registrado compuesto por caracteres aleatorios. Si la
+                            conexión tenía éxito, el virus abortaba su propagación. Al registrar el dominio por solo
+                            $10.69 USD, Hutchins activó accidentalmente el interruptor de apagado (Killswitch) a nivel
+                            global, conteniendo la pandemia y salvando miles de sistemas críticos.
+                        </div>
+                    </div>
+
+                    <!-- Ficha Técnica -->
+                    <aside class="specs-panel">
+                        <h3>ESPECIFICACIONES DEL COMPORTAMIENTO</h3>
+                        <table class="cyber-table">
+                            <thead>
+                                <tr>
+                                    <th>Parámetro</th>
+                                    <th>Valor Histórico</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Fecha de Outbreak</strong></td>
+                                    <td>12 de Mayo de 2017</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Vector Inicial</strong></td>
+                                    <td>EternalBlue (MS17-010)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Backdoor Inyectado</strong></td>
+                                    <td>DoublePulsar (In-memory)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Puerto de Escaneo</strong></td>
+                                    <td>TCP 445 (SMB)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Nodos Afectados</strong></td>
+                                    <td>~230,000 computadoras</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Países Afectados</strong></td>
+                                    <td>Mas de 150 países</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Dominio Killswitch</strong></td>
+                                    <td><code>iuqerfsodp9ifjaposdfjhgosurijfaewrwergwea.com</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </aside>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="cyber-footer">
+        <div>SIMULACIÓN Y ECUACIONES DIFERENCIALES &copy; 2026 - RENM</div>
+        <div class="footer-tag">MODO TERMINAL ACTIVO - VERSIÓN 1.2.0</div>
+    </footer>
+
+    <!-- Script de Lógica -->
+    <script src="script.js"></script>
+</body>
+
+</html>
